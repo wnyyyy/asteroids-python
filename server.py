@@ -42,6 +42,7 @@ class Server:
         self._create_connection() # cria a conexão do server e aguarda os clientes conectarem
         self._create_lobby() # cria o lobby da partida e aguarda os jogadores estarem prontos
         self._create_listeners() # cria um listener para cada cliente conectado, cada listener é uma thread
+        #self._create_broadcaster()
         time.sleep(0.2)
         #self._spawn_asteroids()
         self._loop()
