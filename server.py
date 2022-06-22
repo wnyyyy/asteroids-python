@@ -40,7 +40,7 @@ class Server:
         self._create_connection() # cria a conexão do server e aguarda os clientes conectarem
         self._create_lobby() # cria o lobby da partida e aguarda os jogadores estarem prontos
         self._create_listeners() # cria um listener para cada cliente conectado, cada listener é uma thread
-        self._create_broadcaster()
+        #self._create_broadcaster()
         time.sleep(0.2)
         #self._spawn_asteroids()
         self._loop()
@@ -62,6 +62,7 @@ class Server:
         for game_object in self._get_game_objects():
             game_object.move(self.size)
         self.lock.release()
+        self._broadcast_game()
 
     def _get_game_objects(self):
         bullets = [bullet for cl_bullets in self.bullets for bullet in cl_bullets]
@@ -100,7 +101,6 @@ class Server:
     def _broadcaster(self):
         while True:
             time.sleep(self.lag)
-            self.clock.tick(self.tick_rate)
             for client in self.clients:
                 spaceships = []
                 self.lock.acquire()
@@ -119,6 +119,27 @@ class Server:
                     client.connection.send(pickle.dumps(server_data))
                 except:
                     pass
+
+    def _broadcast_game(self):
+        #time.sleep(self.lag)
+        for client in self.clients:
+            spaceships = []
+            self.lock.acquire()
+            for spaceship in self.spaceships:
+                if spaceship.id != client.id:
+                    spaceships.append(spaceship)
+            
+            bullets = self.bullets[:client.id-1] + self.bullets[client.id:]
+            # instancia um objeto ServerData, que será usado para transportar dados pelo socket
+            asteroids = self.asteroids
+            self.lock.release()
+
+            server_data = ServerData(spaceships, [x for xs in bullets for x in xs], asteroids)
+            
+            try:
+                client.connection.send(pickle.dumps(server_data))
+            except:
+                pass
 
     # cria a conexão do server e aguarda os clientes conectarem
     def _create_connection(self):

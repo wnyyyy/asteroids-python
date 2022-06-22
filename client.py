@@ -97,33 +97,42 @@ class Client:
 
         # executa enquanto o cliente estiver conectado
         while self.connected:
+            time.sleep(0.001)
             try:
                 recv = self.connection.recv(2048)
                 load = pickle.loads(recv)
                 spaceships, bullets, sv_asteroids = self._unpack_server_data(load)
                 self.lock.acquire()
-                test1 = time.time()
                 self.team_bullets = bullets
                 self.team = spaceships
 
                 ## algoritmo muito lento (30ms com n=20)
-                asteroids = []
-                for sv_asteroid in sv_asteroids:
-                    new = Asteroid(sv_asteroid[1], sv_asteroid[2], sv_asteroid[3])
-                    new.velocity = sv_asteroid[0]
-                    asteroids.append(new)
-                self.asteroids = asteroids
+                # asteroids = []
+                # for sv_asteroid in sv_asteroids:
+                #     new = Asteroid(sv_asteroid[1], sv_asteroid[2], sv_asteroid[3])
+                #     new.velocity = sv_asteroid[0]
+                #     asteroids.append(new)
+                # self.asteroids = asteroids
 
                 ## algoritmo rápido
-                # sv_asteroids_id = [asteroid[2] for asteroid in sv_asteroids]
-                # cl_asteroids_id = [asteroid.id for asteroid in self.asteroids]
-                # destroyed_asteroids =  cl_asteroids_id - sv_asteroids_id
-                # new_asteroids = sv_asteroids_id - cl_asteroids_id
+                sv_asteroids_id = set([asteroid[2] for asteroid in sv_asteroids])
+                cl_asteroids_id = set([asteroid.id for asteroid in self.asteroids])
+                destroyed_asteroids = cl_asteroids_id - sv_asteroids_id
+                new_asteroids = sv_asteroids_id - cl_asteroids_id
 
-                #self.asteroids = asteroids
+                for asteroid_index in range(len(self.asteroids)):
+                    for destroyed_asteroid in destroyed_asteroids:
+                        if self.asteroids[asteroid_index].id == destroyed_asteroid:
+                            del self.asteroids[asteroid_index]
+                            break
+                for sv_asteroid in sv_asteroids:
+                    for new_asteroid in new_asteroids:
+                        if sv_asteroid[2] == new_asteroid:
+                            new = Asteroid(sv_asteroid[1], sv_asteroid[2], sv_asteroid[3])
+                            new.velocity = sv_asteroid[0]
+                            self.asteroids.append(new)
+                            break
 
-
-                print(time.time() - test1)
                 self.lock.release()
             except:
                 pass
