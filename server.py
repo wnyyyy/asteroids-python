@@ -29,18 +29,19 @@ class Server:
         self.lock = Lock() # lock para resolver race conditions
         self.spawn_timer = time.time()
         self._clear()
-        self.asteroids= [Asteroid((0,0),1), Asteroid((100,100),2), Asteroid((100,100),3), Asteroid((100,10),4),
-        Asteroid((0,0),5), Asteroid((100,100),12), Asteroid((100,100),4353), Asteroid((100,10),123444),
-        Asteroid((0,0),1123), Asteroid((100,100),232), Asteroid((100,100),32345), Asteroid((100,10),5644),
-        Asteroid((0,0),12), Asteroid((100,100),122), Asteroid((100,100),33445), Asteroid((100,10),4565784),
-        Asteroid((0,0),321), Asteroid((100,100),1412), Asteroid((100,100),2233), Asteroid((100,10),567574)]
+        ## a consertar: servidor quebra caso tenha muitos asteroides no mapa
+        # self.asteroids= [Asteroid((0,0),1), Asteroid((100,100),2), Asteroid((100,100),3), Asteroid((100,10),4),
+        # Asteroid((0,0),5), Asteroid((100,100),12), Asteroid((100,100),4353), Asteroid((100,10),123444),
+        # Asteroid((0,0),1123), Asteroid((100,100),232), Asteroid((100,100),32345), Asteroid((100,10),5644),
+        # Asteroid((0,0),12), Asteroid((100,100),122), Asteroid((100,100),33445), Asteroid((100,10),4565784),
+        # Asteroid((0,0),321), Asteroid((100,100),1412), Asteroid((100,100),2233), Asteroid((100,10),567574)]
+        self.asteroids=[Asteroid((0,0),1), Asteroid((100,100),2)]
 
     # inicia o jogo
     def run(self):
         self._create_connection() # cria a conexão do server e aguarda os clientes conectarem
         self._create_lobby() # cria o lobby da partida e aguarda os jogadores estarem prontos
         self._create_listeners() # cria um listener para cada cliente conectado, cada listener é uma thread
-        #self._create_broadcaster()
         time.sleep(0.2)
         #self._spawn_asteroids()
         self._loop()
@@ -101,6 +102,7 @@ class Server:
     def _broadcaster(self):
         while True:
             time.sleep(self.lag)
+            self.clock.tick(self.tick_rate)
             for client in self.clients:
                 spaceships = []
                 self.lock.acquire()
@@ -121,7 +123,7 @@ class Server:
                     pass
 
     def _broadcast_game(self):
-        #time.sleep(self.lag)
+        time.sleep(self.lag)
         for client in self.clients:
             spaceships = []
             self.lock.acquire()
@@ -189,11 +191,17 @@ class Server:
                         spaceship.velocity = cl_spaceship[0]
                         spaceship.position = cl_spaceship[1]
                         spaceship.direction = cl_spaceship[2]
-                # captura o index dos asteroides abatidos
-                for asteroid_index in hit_asteroids:
-                    asteroid1, asteroid2 = self.asteroids.pop(asteroid_index).split()
-                    self.asteroids.append(asteroid1)
-                    self.asteroids.append(asteroid2)
+                # divide asteroides abatidos
+                for asteroid in hit_asteroids:
+                    #print("hit", asteroid.id)
+                    ret = asteroid.split()
+                    if (ret != False):
+                        asteroid1, asteroid2 = ret
+                        #print("new1: ", asteroid1.id)
+                        #print("new2: ", asteroid2.id)
+                        self.asteroids.append(asteroid1)
+                        self.asteroids.append(asteroid2)
+                    self.asteroids.remove(asteroid)
                 self.lock.release()
             except:
                 pass
@@ -217,8 +225,10 @@ class Server:
     def _unpack_client_data(self, client_data : ClientData, id):
         hit_asteroids = []
         for hit_asteroid_id in client_data.hit_asteroids:
-            for i in range(len(self.asteroids)):
-                if self.asteroids[i].id == hit_asteroid_id:
-                    hit_asteroids.append(i)
+            for asteroid in self.asteroids:
+                if asteroid.id == hit_asteroid_id:
+                    #print("hit", str(asteroid.id))
+                    hit_asteroids.append(asteroid)
                     break
+        #if len(hit_asteroids) > 0: print(str(hit_asteroids))
         return client_data.spaceship, client_data.bullets, hit_asteroids, client_data.game_over

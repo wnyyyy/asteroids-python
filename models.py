@@ -140,8 +140,9 @@ class Asteroid(GameObject):
         if self.size > 1:
             asteroid1 = Asteroid(self.position, uuid.uuid1().int, self.size - 1)
             asteroid2 = Asteroid(self.position, uuid.uuid1().int, self.size - 1)
-            return asteroid1, asteroid2
-                
+            return [asteroid1, asteroid2]
+        else:
+            return False                
 
 class Bullet(GameObject):
     def __init__(self, position, velocity, spaceship_id, color, bullet_id = uuid.uuid1().int):

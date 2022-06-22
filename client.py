@@ -1,6 +1,7 @@
 # fonte: https://realpython.com/asteroids-game-python/
 # modificado para suportar diversos players e online
 
+import ast
 import pickle
 import socket
 from threading import Lock, Thread
@@ -78,7 +79,7 @@ class Client:
             for asteroid_index in range(len(self.asteroids)):
                 if self.asteroids[asteroid_index].collides_with(bullet):
                     hit_asteroids.append(self.asteroids[asteroid_index].id)
-                    del self.asteroids[asteroid_index]
+                    #del self.asteroids[asteroid_index]
                     self.bullets.remove(bullet)
                     break
 
@@ -97,7 +98,7 @@ class Client:
 
         # executa enquanto o cliente estiver conectado
         while self.connected:
-            time.sleep(0.001)
+            self.clock.tick(self.tick_rate)
             try:
                 recv = self.connection.recv(2048)
                 load = pickle.loads(recv)
@@ -115,21 +116,25 @@ class Client:
                 # self.asteroids = asteroids
 
                 ## algoritmo rápido
-                sv_asteroids_id = set([asteroid[2] for asteroid in sv_asteroids])
-                cl_asteroids_id = set([asteroid.id for asteroid in self.asteroids])
-                destroyed_asteroids = cl_asteroids_id - sv_asteroids_id
-                new_asteroids = sv_asteroids_id - cl_asteroids_id
+                sv_asteroids_id = [asteroid[2] for asteroid in sv_asteroids]
+                cl_asteroids_id = [asteroid.id for asteroid in self.asteroids]
+                destroyed_asteroids = list(set.difference(set(cl_asteroids_id), sv_asteroids_id))
+                new_asteroids = list(set.difference(set(sv_asteroids_id), cl_asteroids_id))
+                #if len(destroyed_asteroids) > 0: print("destroyed: ", str(destroyed_asteroids) )
+                #if len(new_asteroids) > 0: print("new: ", str(new_asteroids) )
 
-                for asteroid_index in range(len(self.asteroids)):
+                for asteroid in self.asteroids:
                     for destroyed_asteroid in destroyed_asteroids:
-                        if self.asteroids[asteroid_index].id == destroyed_asteroid:
-                            del self.asteroids[asteroid_index]
+                        if asteroid.id == destroyed_asteroid:
+                            #print("remove asteroid"+str(asteroid.id))
+                            self.asteroids.remove(asteroid)
                             break
                 for sv_asteroid in sv_asteroids:
                     for new_asteroid in new_asteroids:
                         if sv_asteroid[2] == new_asteroid:
                             new = Asteroid(sv_asteroid[1], sv_asteroid[2], sv_asteroid[3])
                             new.velocity = sv_asteroid[0]
+                            #print("add asteroid"+str(new.id))
                             self.asteroids.append(new)
                             break
 
