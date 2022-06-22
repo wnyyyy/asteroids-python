@@ -108,6 +108,7 @@ class Client:
                 self.team = spaceships
 
                 ## algoritmo muito lento (30ms com n=20)
+                ## não precisa reinstanciar asteroides que já existem no cliente
                 # asteroids = []
                 # for sv_asteroid in sv_asteroids:
                 #     new = Asteroid(sv_asteroid[1], sv_asteroid[2], sv_asteroid[3])
@@ -116,6 +117,7 @@ class Client:
                 # self.asteroids = asteroids
 
                 ## algoritmo rápido
+                ## deleta os asteroides que existem no cliente mas não no server e cria asteroides que existem no server mas não no cliente
                 sv_asteroids_id = [asteroid[2] for asteroid in sv_asteroids]
                 cl_asteroids_id = [asteroid.id for asteroid in self.asteroids]
                 destroyed_asteroids = list(set.difference(set(cl_asteroids_id), sv_asteroids_id))

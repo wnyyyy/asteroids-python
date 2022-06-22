@@ -22,13 +22,13 @@ class Server:
         self.port = port
         self.clock = pygame.time.Clock()
         self.clients = []
-        self.difficulty = difficulty
-        self.spawn_timers = [9999,5,3,1,0.2]
+        self.difficulty = difficulty # não utilizado, tempo para nascer asteroides
+        self.spawn_timers = [9999,5,3,1,0.2] # não utilizado, tempo para nascer asteroides
         self.dist_buffer = size.x/7
-        self.max_asteroids = 15
+        self.max_asteroids = 15 # não utilizado, max de asteroides no mapa
         self.lock = Lock() # lock para resolver race conditions
-        self.spawn_timer = time.time()
-        self._clear()
+        self.spawn_timer = time.time() # não utilizado, tempo para nascer asteroides
+        self._clear() 
         ## a consertar: servidor quebra caso tenha muitos asteroides no mapa
         # self.asteroids= [Asteroid((0,0),1), Asteroid((100,100),2), Asteroid((100,100),3), Asteroid((100,10),4),
         # Asteroid((0,0),5), Asteroid((100,100),12), Asteroid((100,100),4353), Asteroid((100,10),123444),
@@ -42,9 +42,9 @@ class Server:
         self._create_connection() # cria a conexão do server e aguarda os clientes conectarem
         self._create_lobby() # cria o lobby da partida e aguarda os jogadores estarem prontos
         self._create_listeners() # cria um listener para cada cliente conectado, cada listener é uma thread
-        #self._create_broadcaster()
+        #self._create_broadcaster() # não testado totalmente, descomentar essa linha faz o broadcast do jogo ser feito numa thread dedicada. lag artificial só funciona desse modo
         time.sleep(0.2)
-        #self._spawn_asteroids()
+        #self._spawn_asteroids() # não testado, thread que cria asteroides
         self._loop()
 
     def _loop(self):
@@ -64,7 +64,7 @@ class Server:
         for game_object in self._get_game_objects():
             game_object.move(self.size)
         self.lock.release()
-        self._broadcast_game()
+        self._broadcast_game() # anuncia o jogo para os clientes. comentar essa linha caso descomente a 45
 
     def _get_game_objects(self):
         bullets = [bullet for cl_bullets in self.bullets for bullet in cl_bullets]
